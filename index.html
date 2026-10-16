@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bet Pool Manager</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14213d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#14213d;--mute:#5d6b85;--line:#dfe4ee;--acc:#2f5bea;--acc-ink:#fff;--gold:#c98f00;--gold-bg:#fff4d1;--bad:#c0392b;--good:#1c8a5a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1424;--card:#172038;--ink:#eaeefb;--mute:#93a0bd;--line:#2a3555;--acc:#6d8cff;--acc-ink:#0e1424;--gold:#f0b429;--gold-bg:#3a2f10;--bad:#ff7b6b;--good:#4cd195}}
+:root[data-theme="dark"]{--bg:#0e1424;--card:#172038;--ink:#eaeefb;--mute:#93a0bd;--line:#2a3555;--acc:#6d8cff;--acc-ink:#0e1424;--gold:#f0b429;--gold-bg:#3a2f10;--bad:#ff7b6b;--good:#4cd195}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.5}
+main{max-width:920px;margin:0 auto;padding:20px 16px 64px}
+h1{font-size:clamp(1.6rem,4vw,2.3rem);margin:0;font-weight:800;font-stretch:90%;letter-spacing:-.02em}
+h2{font-size:1.1rem;margin:0 0 12px;font-weight:700}
+.sub{color:var(--mute);margin:2px 0 18px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);font:inherit;font-weight:600;padding:10px 14px;cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--acc)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+label{display:block;font-size:.85rem;color:var(--mute);margin-bottom:4px;font-weight:600}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.row>div{flex:1 1 140px}
+.btn{font:inherit;font-weight:700;background:var(--acc);color:var(--acc-ink);border:0;border-radius:6px;padding:10px 16px;cursor:pointer}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:6px 10px;font-size:.85rem}
+.x{background:none;border:0;color:var(--bad);cursor:pointer;font:inherit;font-weight:600;padding:4px 8px}
+.team{display:flex;gap:8px;margin-bottom:8px}
+.pool{display:flex;height:34px;border-radius:6px;overflow:hidden;background:var(--line);margin:10px 0 14px}
+.pool div{min-width:2px;transition:flex-grow .4s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.9rem}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mute);font-size:.85rem}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:480px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:.93rem}
+th{color:var(--mute);font-weight:600;font-size:.82rem}
+td.n,th.n{text-align:right}
+tr.win td{background:var(--gold-bg)}
+.pos{color:var(--good);font-weight:700}.neg{color:var(--bad);font-weight:700}
+.note{color:var(--mute);font-size:.88rem}
+.empty{color:var(--mute);padding:14px 0}
+.winner-pick{display:flex;flex-wrap:wrap;gap:8px}
+.winner-pick button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:10px 16px;cursor:pointer}
+.winner-pick button[aria-pressed=true]{border-color:var(--gold);background:var(--gold-bg)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+#dlg{position:fixed;inset:0;background:rgba(10,14,28,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+#dlg[hidden]{display:none}
+#dlg .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:380px;width:100%}
+#dlg p{margin:0 0 16px}
+#dlg .acts{display:flex;gap:8px;justify-content:flex-end}
+@media (prefers-reduced-motion:reduce){.pool div{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div><h1 id="title">Bet Pool</h1><p class="sub" id="sub"></p><p class="note" id="st" style="margin:-12px 0 14px"></p></div>
+    <button class="btn ghost sm" id="reset">Reset all</button>
+  </div>
+  <div class="tabs" role="tablist">
+    <button role="tab" data-t="setup" aria-selected="true">Setup</button>
+    <button role="tab" data-t="bets" aria-selected="false">Bets</button>
+    <button role="tab" data-t="results" aria-selected="false">Results</button>
+  </div>
+  <section id="view"></section>
+</main>
+<div id="dlg" hidden role="alertdialog" aria-modal="true"><div class="box"><p id="dmsg"></p><div class="acts"><button class="btn ghost sm" id="dcx">Cancel</button><button class="btn sm" id="dok">OK</button></div></div></div>
+<script>
+const COLORS=['#2f5bea','#e4572e','#1c8a5a','#9b5de5','#c98f00','#00a6a6','#d6336c','#6c757d'];
+const KEY='betpool-v1';
+let S={event:'Finals Showdown',fee:10,teams:[{id:1,name:'Team A'},{id:2,name:'Team B'}],bets:[],winner:null,nid:3};
+let tab='setup',copyMsg='';
+try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);if(p&&p.teams)S=p}}catch(e){}
+let status='unknown',lastSave=null;
+function idb(mode,fn){return new Promise((res,rej)=>{try{const q=indexedDB.open('betpool',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onerror=()=>rej(q.error);q.onsuccess=()=>{const db=q.result,tx=db.transaction('kv',mode),rq=fn(tx.objectStore('kv'));tx.oncomplete=()=>{db.close();res(rq&&rq.result)};tx.onerror=()=>rej(tx.error)}}catch(e){rej(e)}})}
+function ask(msg,ok,cancel=true){return new Promise(res=>{const d=document.querySelector('#dlg'),o=document.querySelector('#dok'),c=document.querySelector('#dcx');
+  document.querySelector('#dmsg').textContent=msg;o.textContent=ok;c.style.display=cancel?'':'none';d.hidden=false;o.focus();
+  const done=v=>{d.hidden=true;o.onclick=c.onclick=null;res(v)};o.onclick=()=>done(true);c.onclick=()=>done(false)})}
+function mark(ok){status=ok?'ok':'fail';if(ok)lastSave=new Date();paintStatus()}
+function paintStatus(){const el=document.querySelector('#st');if(!el)return;
+  if(status==='fail'){el.textContent='⚠ Browser storage is blocked, so data will be lost on refresh. Copy a backup in Setup.';el.style.color='var(--bad)'}
+  else if(status==='ok'){el.textContent='✓ Auto-saved on this device at '+lastSave.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});el.style.color='var(--good)'}
+  else el.textContent=''}
+function save(){S.savedAt=Date.now();const j=JSON.stringify(S);let ok=false;
+  try{localStorage.setItem(KEY,j);ok=true}catch(e){}
+  mark(ok);
+  idb('readwrite',st=>st.put(j,'state')).then(()=>mark(true)).catch(()=>{})}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'₱'+Number(n).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const col=id=>COLORS[S.teams.findIndex(t=>t.id===id)%COLORS.length];
+const tname=id=>{const t=S.teams.find(t=>t.id===id);return t?t.name:'(removed)'};
+
+function calc(){
+  const total=S.bets.reduce((a,b)=>a+b.amt,0);
+  const per={};S.teams.forEach(t=>per[t.id]=0);
+  S.bets.forEach(b=>{if(b.team in per)per[b.team]+=b.amt});
+  const fee=total*(S.fee/100), pool=total-fee;
+  const r={total,per,fee,pool,rows:[],refund:false,mult:0,feeTaken:fee};
+  if(S.winner!=null){
+    const ws=per[S.winner]||0;
+    if(ws===0){r.refund=true;r.feeTaken=0;r.rows=S.bets.map(b=>({...b,pay:b.amt,won:false}))}
+    else{r.mult=pool/ws;r.rows=S.bets.map(b=>{const won=b.team===S.winner;return{...b,won,pay:won?Math.round(b.amt*r.mult*100)/100:0}})}
+  }
+  return r;
+}
+
+function render(){
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===tab));
+  $('#title').textContent=S.event||'Bet Pool';
+  const c=calc();
+  $('#sub').textContent=S.teams.length+' teams · '+S.bets.length+' bets · '+money(c.total)+' in the pool';
+  $('#view').innerHTML=tab==='setup'?setupV():tab==='bets'?betsV(c):resultsV(c);
+  paintStatus();
+}
+
+function poolBar(c){
+  if(!c.total)return '<div class="pool"></div><p class="empty">No bets yet.</p>';
+  return '<div class="pool">'+S.teams.map(t=>`<div style="flex-grow:${c.per[t.id]};background:${col(t.id)}" title="${esc(t.name)}"></div>`).join('')+'</div>'+
+  '<div class="legend">'+S.teams.map(t=>`<span><i class="dot" style="background:${col(t.id)}"></i>${esc(t.name)}: ${money(c.per[t.id])} (${(c.per[t.id]/c.total*100).toFixed(1)}%)</span>`).join('')+'</div>';
+}
+
+function setupV(){
+  return `<div class="card"><h2>Event</h2><div class="row">
+  <div style="flex:3 1 220px"><label for="ev">Event name</label><input id="ev" value="${esc(S.event)}"></div>
+  <div><label for="fee">Organizer fee (%)</label><input id="fee" type="number" min="0" max="100" step="0.5" value="${S.fee}"></div></div>
+  <p class="note">The fee is taken from the total pool before winners are paid. Set it to 0 for no fee.</p></div>
+  <div class="card"><h2>Teams</h2>
+  ${S.teams.map(t=>`<div class="team"><i class="dot" style="background:${col(t.id)};margin:14px 4px 0 0"></i><input data-tn="${t.id}" value="${esc(t.name)}" aria-label="Team name"><button class="x" data-rt="${t.id}">Remove</button></div>`).join('')}
+  <button class="btn" id="addt">Add team</button>
+  ${S.teams.length<2?'<p class="note" style="color:var(--bad)">Add at least two teams.</p>':''}</div>
+  <div class="card"><h2>Backup &amp; restore</h2><p class="note">Everything auto-saves on this device and survives refreshes and closing the tab. Create a backup to keep a copy or move it to another device.</p>
+  <textarea id="bk" rows="4" style="font-family:monospace;font-size:.8rem" placeholder="Backup text appears here. Paste a backup here to restore."></textarea>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" id="bexp">Create backup</button><button class="btn ghost sm" id="bcopy">Copy</button><button class="btn ghost sm" id="bimp">Restore from text</button></div>
+  <p class="note" id="bmsg" style="margin:8px 0 0"></p></div>`;
+}
+
+function betsV(c){
+  const opts=S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  return `<div class="card"><h2>Add a bet</h2><div class="row">
+  <div><label for="bn">Bettor name</label><input id="bn" placeholder="e.g. Juan"></div>
+  <div><label for="bt">Team</label><select id="bt">${opts}</select></div>
+  <div><label for="ba">Amount (₱)</label><input id="ba" type="number" min="1" step="any" placeholder="100"></div>
+  <div style="flex:0 0 auto"><button class="btn" id="addb">Add bet</button></div></div>
+  <p class="note" id="berr" style="color:var(--bad);margin:8px 0 0"></p></div>
+  <div class="card"><h2>Pool so far</h2>${poolBar(c)}</div>
+  <div class="card"><h2>All bets</h2>${S.bets.length?`<div class="scroll"><table><tr><th>Bettor</th><th>Team</th><th class="n">Amount</th><th></th></tr>
+  ${S.bets.map(b=>`<tr><td>${esc(b.name)}</td><td><i class="dot" style="background:${col(b.team)}"></i>${esc(tname(b.team))}</td><td class="n">${money(b.amt)}</td><td class="n"><button class="x" data-rb="${b.id}">Delete</button></td></tr>`).join('')}</table></div>`:'<p class="empty">No bets yet. Add the first one above.</p>'}</div>`;
+}
+
+function resultsV(c){
+  const teamsTbl=`<div class="scroll"><table><tr><th>Team</th><th class="n">Bets</th><th class="n">Total staked</th><th class="n">Share</th><th class="n">Pays per ₱1</th></tr>
+  ${S.teams.map(t=>{const n=S.bets.filter(b=>b.team===t.id).length,v=c.per[t.id];return `<tr class="${S.winner===t.id?'win':''}"><td><i class="dot" style="background:${col(t.id)}"></i>${esc(t.name)}${S.winner===t.id?' (winner)':''}</td><td class="n">${n}</td><td class="n">${money(v)}</td><td class="n">${c.total?(v/c.total*100).toFixed(1)+'%':'-'}</td><td class="n">${v?'₱'+(c.pool/v).toFixed(2):'-'}</td></tr>`}).join('')}</table></div>`;
+  let h=`<div class="stats"><div class="stat"><b>${money(c.total)}</b><span>Total pool</span></div><div class="stat"><b>${money(c.feeTaken)}</b><span>Organizer fee (${S.fee}%)</span></div><div class="stat"><b>${money(c.refund?c.total:c.pool)}</b><span>${c.refund?'Refunded':'Paid to winners'}</span></div></div>
+  <div class="card"><h2>Pool by team</h2>${poolBar(c)}<div style="margin-top:14px">${teamsTbl}</div>
+  <p class="note">"Pays per ₱1" shows the current return if that team wins. It changes as bets come in.</p></div>
+  <div class="card"><h2>Pick the winner</h2><div class="winner-pick">${S.teams.map(t=>`<button data-w="${t.id}" aria-pressed="${S.winner===t.id}">${esc(t.name)}</button>`).join('')}</div>
+  ${S.winner!=null?'<p style="margin:12px 0 0"><button class="btn ghost sm" id="clrw">Clear winner</button></p>':'<p class="note">Select the winning team to compute payouts.</p>'}</div>`;
+  if(S.winner!=null){
+    if(c.refund)h+=`<div class="card"><p style="margin:0"><b>Nobody bet on ${esc(tname(S.winner))}.</b> All bets are refunded in full and no fee is taken.</p></div>`;
+    const by={};c.rows.forEach(r=>{const k=r.name.trim().toLowerCase();(by[k]=by[k]||{name:r.name,stake:0,pay:0}).stake+=r.amt;by[k].pay+=r.pay});
+    const people=Object.values(by);
+    h+=`<div class="card"><h2>Payout report: ${esc(tname(S.winner))} wins</h2>
+    ${c.refund?'':`<p class="note">Winners receive ₱${c.mult.toFixed(4)} for every ₱1 they bet (stake included). Amounts are rounded to the centavo.</p>`}
+    ${people.length?`<div class="scroll"><table><tr><th>Bettor</th><th class="n">Staked</th><th class="n">Payout</th><th class="n">Net</th></tr>
+    ${people.map(p=>{const n=p.pay-p.stake;return `<tr class="${p.pay>p.stake?'win':''}"><td>${esc(p.name)}</td><td class="n">${money(p.stake)}</td><td class="n">${money(p.pay)}</td><td class="n ${n>0?'pos':n<0?'neg':''}">${n>0?'+':''}${money(n)}</td></tr>`}).join('')}
+    <tr><th>Total</th><th class="n">${money(c.total)}</th><th class="n">${money(people.reduce((a,p)=>a+p.pay,0))}</th><th></th></tr></table></div>`:'<p class="empty">No bets to report.</p>'}
+    <p style="margin:14px 0 0"><button class="btn sm" id="copy">Copy report as text</button> <span class="note" id="cm">${copyMsg}</span></p></div>`;
+    window._people=people;
+  }
+  return h;
+}
+
+function reportText(){
+  const c=calc(),L=[];
+  L.push((S.event||'Bet Pool')+' - Winner: '+tname(S.winner));
+  L.push('Total pool: '+money(c.total)+' | Fee ('+S.fee+'%): '+money(c.feeTaken)+' | Paid out: '+money(c.refund?c.total:c.pool));
+  L.push('');
+  (window._people||[]).forEach(p=>L.push(p.name+': staked '+money(p.stake)+', payout '+money(p.pay)+', net '+money(p.pay-p.stake)));
+  return L.join('\n');
+}
+
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.t){tab=t.dataset.t;render();return}
+  if(t.id==='reset'){if(await ask('Delete all teams, bets and results? This cannot be undone.','Yes, reset')){S={event:'Finals Showdown',fee:10,teams:[{id:1,name:'Team A'},{id:2,name:'Team B'}],bets:[],winner:null,nid:3};save();render()}return}
+  if(t.id==='bexp'){$('#bk').value=JSON.stringify(S);$('#bmsg').textContent='Backup created. Click Copy and store it somewhere safe.';return}
+  if(t.id==='bcopy'){const v=$('#bk').value;if(!v){$('#bmsg').textContent='Create a backup first.';return}
+    (async()=>{try{await navigator.clipboard.writeText(v);$('#bmsg').textContent='Copied.'}catch(err){$('#bk').select();$('#bmsg').textContent='Auto-copy blocked. The text is selected, so press Ctrl/Cmd+C.'}})();return}
+  if(t.id==='bimp'){let p;try{p=JSON.parse($('#bk').value)}catch(err){$('#bmsg').textContent='That is not a valid backup.';return}
+    if(!p||!Array.isArray(p.teams)||p.teams.length<2||!Array.isArray(p.bets)||p.teams.some(x=>typeof x.id!=='number')){$('#bmsg').textContent='That is not a valid backup.';return}
+    if(!(await ask('Replace everything currently saved with this backup?','Restore')))return;
+    p.nid=Math.max(p.nid||0,...p.teams.map(x=>x.id),...p.bets.map(x=>x.id||0))+1;
+    if(!p.teams.some(x=>x.id===p.winner))p.winner=null;
+    S=p;save();render();return}
+  if(t.id==='addt'){S.teams.push({id:S.nid++,name:'Team '+String.fromCharCode(64+S.teams.length+1)});save();render();return}
+  if(t.dataset.rt){const id=+t.dataset.rt;if(S.teams.length<=2){await ask('Keep at least two teams.','OK',false);return}
+    const n=S.bets.filter(b=>b.team===id).length;if(n&&!(await ask('This also deletes '+n+' bet(s) on that team. Continue?','Delete')))return;
+    S.teams=S.teams.filter(x=>x.id!==id);S.bets=S.bets.filter(b=>b.team!==id);if(S.winner===id)S.winner=null;save();render();return}
+  if(t.id==='addb'){const name=$('#bn').value.trim(),team=+$('#bt').value,amt=parseFloat($('#ba').value);
+    if(!name||!(amt>0)){$('#berr').textContent='Enter a bettor name and an amount above zero.';return}
+    S.bets.push({id:S.nid++,name,team,amt:Math.round(amt*100)/100});save();render();$('#bn').focus();return}
+  if(t.dataset.rb){S.bets=S.bets.filter(b=>b.id!==+t.dataset.rb);save();render();return}
+  if(t.dataset.w){S.winner=+t.dataset.w;save();render();return}
+  if(t.id==='clrw'){S.winner=null;save();render();return}
+  if(t.id==='copy'){const txt=reportText();
+    (async()=>{try{await navigator.clipboard.writeText(txt);copyMsg='Copied.'}catch(err){copyMsg='Copy blocked by the browser. Select the table and copy manually.'}
+      const el=$('#cm');if(el)el.textContent=copyMsg})();return}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='ev'){S.event=t.value;save();$('#title').textContent=S.event||'Bet Pool'}
+  else if(t.id==='fee'){let v=parseFloat(t.value);S.fee=isNaN(v)?0:Math.min(100,Math.max(0,v));save()}
+  else if(t.dataset.tn){const x=S.teams.find(q=>q.id===+t.dataset.tn);if(x){x.name=t.value||'Unnamed';save()}}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&['bn','ba'].includes(e.target.id))$('#addb').click()});
+render();
+idb('readonly',st=>st.get('state')).then(j=>{if(j){const p=JSON.parse(j);if(p&&Array.isArray(p.teams)&&(p.savedAt||0)>(S.savedAt||0)){S=p;render()}}save()}).catch(()=>{});
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script>
+</body>
+</html>
